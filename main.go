@@ -9,15 +9,26 @@ import (
 
 var VERSION = "v0.0.0-dev"
 
+func beforeApp(c *cli.Context) error {
+	if c.GlobalBool("debug") {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+	return nil
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "vault-volume-driver"
 	app.Version = VERSION
-	app.Usage = "You need help!"
-	app.Action = func(c *cli.Context) error {
-		logrus.Info("I'm a turkey")
-		return nil
+	app.Usage = "Rancher Vault Volume Driver"
+	app.Before = beforeApp
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name: "debug,d",
+		},
 	}
+
+	app.Commands = []cli.Command{}
 
 	app.Run(os.Args)
 }
