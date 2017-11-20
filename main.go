@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/rancher/vault-volume-driver/server"
 	"github.com/urfave/cli"
 )
 
@@ -28,7 +29,9 @@ func main() {
 		},
 	}
 
-	app.Commands = []cli.Command{}
+	app.Commands = []cli.Command{
+		server.Command(),
+	}
 
 	app.Run(os.Args)
 }
