@@ -17,6 +17,7 @@ if echo $TAG | grep -q dirty; then
 fi
 
 cp ../bin/vault-volume-driver .
+cp ../bin/volume-driver .
 
 IMAGE=${REPO}/vault-volume-driver:${TAG}
 docker build -t ${IMAGE} .

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e 
+
+cd $(dirname $0)/..
+
+export VAULT_ROOT_TOKEN_ID="password"
+
+#export VAULT_TOKEN=${VAULT_ROOT_TOKEN_ID}
+#export VAULT_ADDR=http://127.0.0.1:8200
+
+/usr/bin/vault server -dev -dev-root-token-id=${VAULT_ROOT_TOKEN_ID} &
+sleep 3
+
+wire_vault()
+{
+    export VAULT_ADDR="${1}"
+    export VAULT_TOKEN=${VAULT_ROOT_TOKEN_ID}
+
+    vault write auth/token/roles/demo allowed_policies=default
+}
+
+get_token()
+{
+    export VAULT_ADDR="${1}"
+    export VAULT_TOKEN=${VAULT_ROOT_TOKEN_ID}
+
+    if [ "${2}" = "true" ]; then
+        export OPTS=-metadata="storage_dir=/secret/rancher"
+    fi
+
+    echo $(/usr/bin/vault token-create ${OPTS} -format=json| jq -r '.auth.client_token')
+}
+
+# Normal ephemeral storage
+wire_vault "http://127.0.0.1:8200"
+./bin/vault-volume-driver -d server &
+
+cd integration
+python --version
+
+find -depth -name __pycache__ -o -name "*.pyc" -exec rm -rf {} \;
+if [ -z "$NO_TEST" ]; then
+    tox "$@"
+fi
