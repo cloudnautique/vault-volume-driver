@@ -34,7 +34,7 @@ get_token()
 
 # Normal ephemeral storage
 wire_vault "http://127.0.0.1:8200"
-./bin/vault-volume-driver -d server &
+./bin/vault-volume-driver -d server --vault-url http://127.0.0.1:8200 --vault-role demo --vault-token ${VAULT_ROOT_TOKEN_ID}&
 
 cd integration
 python --version
