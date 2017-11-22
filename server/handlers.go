@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/api"
 )
@@ -21,6 +22,21 @@ func CreateTokenRequest(rw http.ResponseWriter, req *http.Request) (int, error) 
 		logrus.Debugf("Error: %s", err.Error())
 		return http.StatusBadRequest, err
 	}
+
+	if message.HostUUID == "" {
+		return http.StatusBadRequest, fmt.Errorf("no hostUUID sent")
+	}
+
+	c, err := NewRancherClient()
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+	key, err := GetRancherHostPublicKey(c, message.HostUUID)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+	logrus.Infof("KEY: %s", key)
+	return 200, nil
 
 	resp, err := vaultClient.NewWrappedVaultToken(policiesList(message.Policies))
 	if err != nil {

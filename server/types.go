@@ -13,6 +13,7 @@ type errObj struct {
 type VaultTokenInput struct {
 	client.Resource
 	Policies string `json:"policies"`
+	HostUUID string `json:"hostUUID"`
 }
 
 type VaultIntermediateTokenResponse struct {
