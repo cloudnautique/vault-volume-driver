@@ -8,37 +8,18 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/api"
+	"github.com/rancher/vault-volume-driver/signature"
 )
 
 func CreateTokenRequest(rw http.ResponseWriter, req *http.Request) (int, error) {
 	apiContext := api.GetApiContext(req)
 
-	message := &VaultTokenInput{}
-
-	jsonDecoder := json.NewDecoder(req.Body)
-
-	err := jsonDecoder.Decode(message)
-	if err != nil {
-		logrus.Debugf("Error: %s", err.Error())
-		return http.StatusBadRequest, err
-	}
-
-	if message.HostUUID == "" {
-		return http.StatusBadRequest, fmt.Errorf("no hostUUID sent")
-	}
-
-	c, err := NewRancherClient()
+	vti, err := newVerifiedVaultTokenInput(req)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	key, err := GetRancherHostPublicKey(c, message.HostUUID)
-	if err != nil {
-		return http.StatusBadRequest, err
-	}
-	logrus.Infof("KEY: %s", key)
-	return 200, nil
 
-	resp, err := vaultClient.NewWrappedVaultToken(policiesList(message.Policies))
+	resp, err := vaultClient.NewWrappedVaultToken(policiesList(vti.Policies))
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -51,4 +32,32 @@ func CreateTokenRequest(rw http.ResponseWriter, req *http.Request) (int, error) 
 
 func policiesList(policies string) []string {
 	return strings.Split(policies, ",")
+}
+
+func newVerifiedVaultTokenInput(req *http.Request) (*VaultTokenInput, error) {
+	msg := &VaultTokenInput{}
+
+	jsonDecoder := json.NewDecoder(req.Body)
+
+	err := jsonDecoder.Decode(msg)
+	if err != nil {
+		logrus.Debugf("Error: %s", err.Error())
+		return msg, err
+	}
+
+	if msg.HostUUID == "" {
+		return msg, fmt.Errorf("no hostUUID sent")
+	}
+
+	key, err := GetRancherHostPublicKey(rancherClient, msg.HostUUID)
+	if err != nil {
+		return msg, err
+	}
+
+	_, err = signature.LoadRSAPublicKey(key)
+	if err != nil {
+		return msg, err
+	}
+
+	return msg, nil
 }

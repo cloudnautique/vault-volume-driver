@@ -29,6 +29,21 @@ func Command() cli.Command {
 				Name:  "vault-token-file",
 				Usage: "file containing issuing token, takes presidence over VAULT_ADDR",
 			},
+			cli.StringFlag{
+				Name:   "rancher-url",
+				Usage:  "Rancher server url (scoped to env)",
+				EnvVar: "CATTLE_URL",
+			},
+			cli.StringFlag{
+				Name:   "rancher-access-key",
+				Usage:  "Rancher access key (scoped to env)",
+				EnvVar: "CATTLE_ACCESS_KEY",
+			},
+			cli.StringFlag{
+				Name:   "rancher-secret-key",
+				Usage:  "Rancher secret key",
+				EnvVar: "CATTLE_SECRET_KEY",
+			},
 		},
 	}
 }
@@ -42,9 +57,12 @@ func StartServer(c *cli.Context) error {
 	}
 
 	config := &Config{
-		VaultURL:   c.String("vault-url"),
-		VaultRole:  c.String("vault-role"),
-		VaultToken: token,
+		VaultURL:      c.String("vault-url"),
+		VaultRole:     c.String("vault-role"),
+		VaultToken:    token,
+		RancherURL:    c.String("rancher-url"),
+		RancherAccess: c.String("rancher-access-key"),
+		RancherSecret: c.String("rancher-secret-key"),
 	}
 
 	if err = config.ValidateConfig(); err == nil {

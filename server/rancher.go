@@ -6,9 +6,11 @@ import (
 	"github.com/rancher/go-rancher/v2"
 )
 
-func NewRancherClient(url string) (*client.RancherClient, error) {
+func NewRancherClient(url, accessKey, secretKey string) (*client.RancherClient, error) {
 	opts := &client.ClientOpts{
-		Url: "http://10.20.3.10:8181/v1/schemas",
+		Url:       url,
+		AccessKey: accessKey,
+		SecretKey: secretKey,
 	}
 	return client.NewRancherClient(opts)
 }
@@ -27,5 +29,5 @@ func GetRancherHostPublicKey(rClient *client.RancherClient, hostUUID string) (st
 		return hosts.Data[0].Info.(map[string]interface{})["hostKey"].(map[string]interface{})["data"].(string), nil
 	}
 
-	return "", fmt.Errorf("Host: %s not found", hostUUID)
+	return "", fmt.Errorf("host: %s not found", hostUUID)
 }

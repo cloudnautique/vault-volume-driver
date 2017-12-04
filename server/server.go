@@ -5,16 +5,21 @@ import (
 
 	"fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/rancher/go-rancher/v2"
 )
 
 var listenAddress = ":8080"
 var vaultClient *VaultClient
+var rancherClient *client.RancherClient
 
 // Config contains config info for server setup.
 type Config struct {
-	VaultURL   string
-	VaultRole  string
-	VaultToken string
+	VaultURL      string
+	VaultRole     string
+	VaultToken    string
+	RancherURL    string
+	RancherAccess string
+	RancherSecret string
 }
 
 type ConfigError struct {
@@ -37,6 +42,11 @@ func startServer(config *Config) error {
 		return err
 	}
 
+	rancherClient, err = NewRancherClient(config.RancherURL, config.RancherAccess, config.RancherSecret)
+	if err != nil {
+		return err
+	}
+
 	router := NewRouter()
 	logrus.Infof("Starting server on: %s", listenAddress)
 	return http.ListenAndServe(listenAddress, router)
@@ -53,6 +63,10 @@ func (c *Config) ValidateConfig() error {
 
 	if c.VaultURL == "" {
 		return ConfigError{errorField: "VaultURL"}
+	}
+
+	if c.RancherURL == "" {
+		return ConfigError{errorField: "RancherURL"}
 	}
 
 	return nil
