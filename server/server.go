@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/v2"
+	"github.com/rancher/vault-volume-driver/rancher"
 )
 
 var listenAddress = ":8080"
@@ -42,7 +43,7 @@ func startServer(config *Config) error {
 		return err
 	}
 
-	rancherClient, err = NewRancherClient(config.RancherURL, config.RancherAccess, config.RancherSecret)
+	rancherClient, err = rancher.NewRancherClient(config.RancherURL, config.RancherAccess, config.RancherSecret)
 	if err != nil {
 		return err
 	}

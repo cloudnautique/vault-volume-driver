@@ -1,9 +1,10 @@
-package server
+package rancher
 
 import (
 	"fmt"
 
 	"github.com/rancher/go-rancher/v2"
+	"os"
 )
 
 func NewRancherClient(url, accessKey, secretKey string) (*client.RancherClient, error) {
@@ -11,6 +12,15 @@ func NewRancherClient(url, accessKey, secretKey string) (*client.RancherClient, 
 		Url:       url,
 		AccessKey: accessKey,
 		SecretKey: secretKey,
+	}
+	return client.NewRancherClient(opts)
+}
+
+func NewRancherClientFromContainerEnv() (*client.RancherClient, error) {
+	opts := &client.ClientOpts{
+		Url:       os.Getenv("CATTLE_URL"),
+		AccessKey: os.Getenv("CATTLE_ACCESS_KEY"),
+		SecretKey: os.Getenv("CATTLE_SECRET_KEY"),
 	}
 	return client.NewRancherClient(opts)
 }
@@ -25,7 +35,7 @@ func GetRancherHostPublicKey(rClient *client.RancherClient, hostUUID string) (st
 		return "", err
 	}
 
-	if len(hosts.Data) >= 0 {
+	if len(hosts.Data) > 0 {
 		return hosts.Data[0].Info.(map[string]interface{})["hostKey"].(map[string]interface{})["data"].(string), nil
 	}
 

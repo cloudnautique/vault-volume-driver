@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/rancher/go-rancher/client"
+	"strings"
 )
 
 type errObj struct {
@@ -12,12 +13,17 @@ type errObj struct {
 
 type VaultTokenInput struct {
 	client.Resource
-	Policies string `json:"policies"`
-	HostUUID string `json:"hostUUID"`
+	Policies  string `json:"policies"`
+	HostUUID  string `json:"hostUUID"`
+	TimeStamp string `json:"timestamp"`
 }
 
 type VaultIntermediateTokenResponse struct {
 	client.Resource
 	Token    string `json:"token"`
 	Accessor string `json:"accessor"`
+}
+
+func (vti *VaultTokenInput) Prepare() []byte {
+	return []byte(strings.Join([]string{vti.Policies, vti.HostUUID, vti.TimeStamp}, ","))
 }

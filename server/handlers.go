@@ -8,7 +8,12 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/api"
+	"github.com/rancher/vault-volume-driver/rancher"
 	"github.com/rancher/vault-volume-driver/signature"
+)
+
+const (
+	SignatureHeaderString = "X-Vault-Driver-Signature"
 )
 
 func CreateTokenRequest(rw http.ResponseWriter, req *http.Request) (int, error) {
@@ -49,7 +54,7 @@ func newVerifiedVaultTokenInput(req *http.Request) (*VaultTokenInput, error) {
 		return msg, fmt.Errorf("no hostUUID sent")
 	}
 
-	key, err := GetRancherHostPublicKey(rancherClient, msg.HostUUID)
+	key, err := rancher.GetRancherHostPublicKey(rancherClient, msg.HostUUID)
 	if err != nil {
 		return msg, err
 	}

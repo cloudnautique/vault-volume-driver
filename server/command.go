@@ -4,6 +4,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+// Command implements the server CLI options.
 func Command() cli.Command {
 	return cli.Command{
 		Name:   "server",
@@ -48,6 +49,7 @@ func Command() cli.Command {
 	}
 }
 
+// StartServer takes the CLI options and starts a server based on the configuration.
 func StartServer(c *cli.Context) error {
 	var err error
 	token := c.String("vault-token")
@@ -72,6 +74,7 @@ func StartServer(c *cli.Context) error {
 	return err
 }
 
+// TODO: Read a file with a vault token inside of it.
 func loadVaultTokenFromFile(filePath string) (string, error) {
 	return "", nil
 }

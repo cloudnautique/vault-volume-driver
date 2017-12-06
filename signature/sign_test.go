@@ -57,7 +57,7 @@ func TestSignHappyPath(t *testing.T) {
 		Message: "string to sign",
 	}
 
-	privateKey, err := loadPrivateKeyFromString(privateKeyString)
+	privateKey, err := LoadPrivateKeyFromString(privateKeyString)
 	if err != nil {
 		t.Errorf("Invalid Private Key: %s", err)
 	}
@@ -67,7 +67,7 @@ func TestSignHappyPath(t *testing.T) {
 		t.Errorf("Test Failed: %s", err)
 	}
 
-	publicKey, err := loadRSAPublicKey(publicKeyString)
+	publicKey, err := LoadRSAPublicKey(publicKeyString)
 	if err != nil {
 		t.Errorf("Invalid public key: %s", err)
 	}
