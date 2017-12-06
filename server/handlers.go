@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"encoding/base64"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/api"
@@ -42,9 +43,14 @@ func policiesList(policies string) []string {
 func newVerifiedVaultTokenInput(req *http.Request) (*VaultTokenInput, error) {
 	msg := &VaultTokenInput{}
 
+	sigBytes, err := base64.StdEncoding.DecodeString(req.Header.Get(SignatureHeaderString))
+	if err != nil {
+		return msg, err
+	}
+
 	jsonDecoder := json.NewDecoder(req.Body)
 
-	err := jsonDecoder.Decode(msg)
+	err = jsonDecoder.Decode(msg)
 	if err != nil {
 		logrus.Debugf("Error: %s", err.Error())
 		return msg, err
@@ -59,10 +65,20 @@ func newVerifiedVaultTokenInput(req *http.Request) (*VaultTokenInput, error) {
 		return msg, err
 	}
 
-	_, err = signature.LoadRSAPublicKey(key)
+	pubKey, err := signature.LoadRSAPublicKey(key)
 	if err != nil {
 		return msg, err
 	}
 
-	return msg, nil
+	verified, err := signature.Verify(sigBytes, msg, pubKey)
+	if err != nil {
+		return msg, err
+	}
+
+	if verified {
+		logrus.Debugf("VERIFIED: %s", verified)
+		return msg, nil
+	}
+
+	return msg, fmt.Errorf("signatures did not match")
 }
