@@ -53,6 +53,10 @@ func (vc *VaultClient) NewWrappedVaultToken(policies []string) (*IntermediateTok
 	return token, nil
 }
 
+func (vc *VaultClient) RevokeToken(accessor string) error {
+	return vc.vClient.Auth().Token().RevokeAccessor(accessor)
+}
+
 func (vc *VaultClient) createVaultToken(tcr *api.TokenCreateRequest) (*api.Secret, error) {
 	header := http.Header{}
 	header.Add("X-Vault-Wrap-TTL", "5m")

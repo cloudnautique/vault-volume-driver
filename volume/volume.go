@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -16,20 +18,32 @@ import (
 	"github.com/rancher/go-rancher-metadata/metadata"
 	"github.com/rancher/vault-volume-driver/server"
 	"github.com/rancher/vault-volume-driver/signature"
-	"net/url"
-	"strings"
 )
 
 const (
-	volRoot             = "/var/lib/rancher/volumes/vault-volume-driver"
-	metadataURL         = "http://169.254.169.250/2016-07-29"
-	vaultTokenServerURL = "http://10.20.0.4:8080/v1-vault-driver/tokens"
-	privateKeyFile      = "/var/lib/rancher/etc/ssl/host.key"
+	volRoot        = "/var/lib/rancher/volumes/vault-volume-driver"
+	metadataURL    = "http://169.254.169.250/2016-07-29"
+	privateKeyFile = "/var/lib/rancher/etc/ssl/host.key"
+)
+
+var (
+	vaultTokenServerURL = setVaultTokenServerURL()
 )
 
 type FlexVol struct{}
 
-func (v *FlexVol) Init() error { return nil }
+func setVaultTokenServerURL() string {
+	envString := os.Getenv("VAULT_TOKEN_SERVER_URL")
+	if envString == "" {
+		envString = "http://vault-token-server:8080/v1-vault-driver/tokens"
+	}
+
+	return envString
+}
+
+func (v *FlexVol) Init() error {
+	return nil
+}
 
 func (v *FlexVol) Create(options map[string]interface{}) (map[string]interface{}, error) {
 	logrus.Infof("%#v", options)
@@ -82,7 +96,7 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 	req := &server.VaultTokenInput{
 		Policies:  policies,
 		HostUUID:  host.UUID,
-		TimeStamp: string(time.Now().UTC().String()),
+		TimeStamp: time.Now().UTC().String(),
 	}
 
 	token, err := makeTokenRequest(req)
@@ -95,7 +109,7 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 		return dev, err
 	}
 
-	devValues.Add("accessor", token.Accessor)
+	devValues.Set("accessor", token.Accessor)
 
 	return devValues.Encode(), nil
 }
@@ -112,9 +126,12 @@ func (v *FlexVol) Detach(device string) error {
 		return err
 	}
 
-	//TODO: call revoke endpoint
+	err = makeTokenRevokeRequest(values.Get("accessor"))
+	if err != nil {
+		return err
+	}
 
-	return os.RemoveAll(device)
+	return os.RemoveAll(values.Get("device") + "/")
 }
 
 func (v *FlexVol) Mount(dir string, device string, params map[string]interface{}) error {
@@ -131,7 +148,7 @@ func (v *FlexVol) Unmount(dir string) error {
 	if err := mount.Unmount(dir); err != nil {
 		return err
 	}
-	return os.RemoveAll(dir)
+	return os.RemoveAll(dir + "/")
 }
 
 func createTmpfs(dir string, options map[string]interface{}) error {
@@ -155,6 +172,49 @@ func createTmpfs(dir string, options map[string]interface{}) error {
 	}
 
 	return mount.Mount("tmpfs", dir, "tmpfs", mountOpts)
+}
+
+func makeTokenRevokeRequest(accessor string) error {
+	client := &http.Client{}
+	vtei := &server.VaultTokenExpireInput{
+		Accessor:  accessor,
+		TimeStamp: time.Now().UTC().String(),
+	}
+
+	host, err := getHostMetadata()
+	if err != nil {
+		return err
+	}
+
+	vtei.HostUUID = host.UUID
+
+	signature, err := getSignature(vtei)
+	if err != nil {
+		return err
+	}
+
+	vteiJson, err := json.Marshal(vtei)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("DELETE", vaultTokenServerURL, bytes.NewBuffer(vteiJson))
+	req.Header.Set(server.SignatureHeaderString, signature)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	// StatusBadRequest is returned if the vault client is already expired.
+	if resp.StatusCode == http.StatusAccepted || resp.StatusCode == http.StatusBadRequest {
+		return nil
+	}
+
+	return fmt.Errorf("request status was not accepted")
 }
 
 func makeTokenRequest(tokenBody *server.VaultTokenInput) (*server.VaultIntermediateTokenResponse, error) {
@@ -182,13 +242,17 @@ func makeTokenRequest(tokenBody *server.VaultTokenInput) (*server.VaultIntermedi
 		return tokenResp, err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return tokenResp, fmt.Errorf("received status code %d", resp.StatusCode)
+	}
+
 	jsonDecoder := json.NewDecoder(resp.Body)
 	err = jsonDecoder.Decode(tokenResp)
 
 	return tokenResp, err
 }
 
-func getSignature(tokenBody *server.VaultTokenInput) (string, error) {
+func getSignature(tokenBody signature.Message) (string, error) {
 	content, err := ioutil.ReadFile(privateKeyFile)
 	if err != nil {
 		return "", err
@@ -226,36 +290,6 @@ func writeToken(token string, options map[string]interface{}) error {
 	return ioutil.WriteFile(fullPath, []byte(token)[:len(token)], os.FileMode(0644))
 }
 
-//func updateRancherVolumeOptions(options map[string]interface{}) error {
-//	rClient, err := rancher.NewRancherClientFromContainerEnv()
-//	if err != nil {
-//		return err
-//	}
-//
-//	volumes, err := rClient.Volume.List(&client.ListOpts{
-//		Filters: map[string]interface{}{
-//			"name": options["name"].(string),
-//		},
-//	})
-//	if err != nil {
-//		return err
-//	}
-//
-//	if len(volumes.Data) != 1 {
-//		return fmt.Errorf("problem finding volume named: %s expected 1 instance got: %d", options["name"].(string), len(volumes.Data))
-//	}
-//
-//	volume := volumes.Data[0]
-//	_, err = rClient.Volume.Update(&volume, &client.Volume{
-//		Name:            volume.Name,
-//		Driver:          volume.Driver,
-//		StorageDriverId: volume.StorageDriverId,
-//		DriverOpts:      options,
-//		HostId:          volume.HostId,
-//	})
-//	return err
-//}
-
 func newDeviceString(device string) string {
 	val := &url.Values{}
 	val.Set("device", device)
@@ -265,7 +299,6 @@ func newDeviceString(device string) string {
 func getDevValues(dev string) (url.Values, error) {
 	retValues, err := url.ParseQuery(dev)
 	cleanedString := strings.Replace(retValues.Get("device"), "%2F", "/", -1)
-	logrus.Infof("CleanedString: %s", cleanedString)
 	retValues.Set("device", cleanedString)
 	return retValues, err
 }

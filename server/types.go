@@ -24,6 +24,17 @@ type VaultIntermediateTokenResponse struct {
 	Accessor string `json:"accessor"`
 }
 
+type VaultTokenExpireInput struct {
+	client.Resource
+	Accessor  string `json:"accessor"`
+	TimeStamp string `json:"timestamp"`
+	HostUUID  string `json:"hostUUID"`
+}
+
 func (vti *VaultTokenInput) Prepare() []byte {
 	return []byte(strings.Join([]string{vti.Policies, vti.HostUUID, vti.TimeStamp}, ","))
+}
+
+func (vte *VaultTokenExpireInput) Prepare() []byte {
+	return []byte(strings.Join([]string{vte.Accessor, vte.TimeStamp, vte.HostUUID}, ","))
 }
