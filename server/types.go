@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/rancher/go-rancher/client"
 	"strings"
+	"time"
 )
 
 type errObj struct {
@@ -37,4 +38,31 @@ func (vti *VaultTokenInput) Prepare() []byte {
 
 func (vte *VaultTokenExpireInput) Prepare() []byte {
 	return []byte(strings.Join([]string{vte.Accessor, vte.TimeStamp, vte.HostUUID}, ","))
+}
+
+func (vti *VaultTokenInput) SetTimeStamp() {
+	vti.TimeStamp = setTimeStamp()
+}
+
+func (vte *VaultTokenExpireInput) SetTimeStamp() {
+	vte.TimeStamp = setTimeStamp()
+}
+
+func (vti *VaultTokenInput) GetTimeStamp() (*time.Time, error) {
+	return getTimeStampTime(vti.TimeStamp)
+}
+
+func (vte *VaultTokenExpireInput) GetTimeStamp() (*time.Time, error) {
+	return getTimeStampTime(vte.TimeStamp)
+}
+
+func setTimeStamp() string {
+	timeByte, _ := time.Now().UTC().MarshalText()
+	return string(timeByte)
+}
+
+func getTimeStampTime(ts string) (*time.Time, error) {
+	t := &time.Time{}
+	err := t.UnmarshalText([]byte(ts))
+	return t, err
 }

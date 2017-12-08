@@ -2,6 +2,7 @@ package signature
 
 import (
 	"testing"
+	"time"
 )
 
 var (
@@ -50,6 +51,13 @@ type TestMessage struct {
 
 func (tm *TestMessage) Prepare() []byte {
 	return []byte(tm.Message)
+}
+
+func (tm *TestMessage) SetTimeStamp() {}
+
+func (tm *TestMessage) GetTimeStamp() (*time.Time, error) {
+	t := time.Now()
+	return &t, nil
 }
 
 func TestSignHappyPath(t *testing.T) {

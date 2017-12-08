@@ -8,16 +8,24 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 )
 
+const (
+	TimeWindow = 5 * time.Minute
+)
+
 type Message interface {
 	Prepare() []byte
+	GetTimeStamp() (*time.Time, error)
+	SetTimeStamp()
 }
 
 func Sign(message Message, privateKey *rsa.PrivateKey) ([]byte, error) {
 	rand := rand.Reader
+	message.SetTimeStamp()
 
 	hashed := sha256.Sum256(message.Prepare())
 
@@ -25,6 +33,15 @@ func Sign(message Message, privateKey *rsa.PrivateKey) ([]byte, error) {
 }
 
 func Verify(signature []byte, message Message, publicKey *rsa.PublicKey) (bool, error) {
+	time, err := message.GetTimeStamp()
+	if err != nil {
+		return false, err
+	}
+
+	if timeWindowExpired(time) {
+		return false, err
+	}
+
 	hashed := sha256.Sum256(message.Prepare())
 
 	if err := rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hashed[:], signature); err != nil {
@@ -53,4 +70,13 @@ func LoadRSAPublicKey(key string) (*rsa.PublicKey, error) {
 	}
 
 	return pub.(*rsa.PublicKey), nil
+}
+
+func timeWindowExpired(ts *time.Time) bool {
+	duration := time.Since(*ts)
+	logrus.Debugf("duration: %s", duration)
+	if duration > TimeWindow {
+		return true
+	}
+	return false
 }

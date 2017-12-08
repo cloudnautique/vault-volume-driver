@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/moby/moby/pkg/mount"
@@ -51,17 +50,13 @@ func (v *FlexVol) Create(options map[string]interface{}) (map[string]interface{}
 
 	if name, ok := options["name"].(string); ok {
 		volPath := path.Join(volRoot, name)
-		logrus.Infof("volPath: %s", volPath)
-
-		err := createTmpfs(volPath, resp)
-		if err != nil {
-			return resp, err
-		}
+		logrus.Infof("volume path is: %s", volPath)
 
 		resp["device"] = newDeviceString(volPath)
+		return resp, nil
 	}
 
-	return resp, nil
+	return resp, fmt.Errorf("no name was passed to driver")
 }
 
 func (v *FlexVol) Delete(options map[string]interface{}) error {
@@ -94,9 +89,8 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 	}
 
 	req := &server.VaultTokenInput{
-		Policies:  policies,
-		HostUUID:  host.UUID,
-		TimeStamp: time.Now().UTC().String(),
+		Policies: policies,
+		HostUUID: host.UUID,
 	}
 
 	token, err := makeTokenRequest(req)
@@ -104,8 +98,15 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 		return dev, err
 	}
 
+	err = createTmpfs(devValues.Get("device"), options)
+	if err != nil {
+		return dev, err
+	}
+
 	err = writeToken(token.Token, options)
 	if err != nil {
+		logrus.Errorf("failed to write token: %s to disk. calling revoke.", err)
+		makeTokenRevokeRequest(token.Accessor)
 		return dev, err
 	}
 
@@ -131,7 +132,7 @@ func (v *FlexVol) Detach(device string) error {
 		return err
 	}
 
-	return os.RemoveAll(values.Get("device") + "/")
+	return os.RemoveAll(values.Get("device"))
 }
 
 func (v *FlexVol) Mount(dir string, device string, params map[string]interface{}) error {
@@ -148,7 +149,7 @@ func (v *FlexVol) Unmount(dir string) error {
 	if err := mount.Unmount(dir); err != nil {
 		return err
 	}
-	return os.RemoveAll(dir + "/")
+	return os.RemoveAll(dir)
 }
 
 func createTmpfs(dir string, options map[string]interface{}) error {
@@ -177,8 +178,7 @@ func createTmpfs(dir string, options map[string]interface{}) error {
 func makeTokenRevokeRequest(accessor string) error {
 	client := &http.Client{}
 	vtei := &server.VaultTokenExpireInput{
-		Accessor:  accessor,
-		TimeStamp: time.Now().UTC().String(),
+		Accessor: accessor,
 	}
 
 	host, err := getHostMetadata()
