@@ -193,12 +193,12 @@ func makeTokenRevokeRequest(accessor string) error {
 		return err
 	}
 
-	vteiJson, err := json.Marshal(vtei)
+	vteiJSON, err := json.Marshal(vtei)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("DELETE", vaultTokenServerURL, bytes.NewBuffer(vteiJson))
+	req, err := http.NewRequest("DELETE", vaultTokenServerURL, bytes.NewBuffer(vteiJSON))
 	req.Header.Set(server.SignatureHeaderString, signature)
 	if err != nil {
 		return err
@@ -226,12 +226,12 @@ func makeTokenRequest(tokenBody *server.VaultTokenInput) (*server.VaultIntermedi
 		return tokenResp, err
 	}
 
-	tokenJson, err := json.Marshal(tokenBody)
+	tokenJSON, err := json.Marshal(tokenBody)
 	if err != nil {
 		return tokenResp, err
 	}
 
-	req, err := http.NewRequest("POST", vaultTokenServerURL, bytes.NewBuffer(tokenJson))
+	req, err := http.NewRequest("POST", vaultTokenServerURL, bytes.NewBuffer(tokenJSON))
 	req.Header.Set(server.SignatureHeaderString, signature)
 	if err != nil {
 		return tokenResp, err
