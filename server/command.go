@@ -1,6 +1,10 @@
 package server
 
 import (
+	"io/ioutil"
+	"strings"
+
+	"github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -55,7 +59,11 @@ func StartServer(c *cli.Context) error {
 	token := c.String("vault-token")
 
 	if c.String("vault-token-file") != "" {
-		loadVaultTokenFromFile(c.String("vault-token-file"))
+		logrus.Debugf("loading tokenfile: %s", c.String("vault-token-file"))
+		token, err = loadVaultTokenFromFile(c.String("vault-token-file"))
+		if err != nil {
+			return err
+		}
 	}
 
 	config := &Config{
@@ -68,13 +76,18 @@ func StartServer(c *cli.Context) error {
 	}
 
 	if err = config.ValidateConfig(); err == nil {
+		logrus.Debug("required config params sent")
 		return startServer(config)
 	}
 
+	logrus.Errorf("failed to start server, bailing: %s", err)
 	return err
 }
 
-// TODO: Read a file with a vault token inside of it.
 func loadVaultTokenFromFile(filePath string) (string, error) {
-	return "", nil
+	contentBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSuffix(string(contentBytes), "\n"), nil
 }

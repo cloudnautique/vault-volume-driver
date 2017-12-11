@@ -53,6 +53,13 @@ func RevokeTokenRequest(rw http.ResponseWriter, req *http.Request) (int, error) 
 	return http.StatusAccepted, nil
 }
 
+func HealthCheck(rw http.ResponseWriter, req *http.Request) (int, error) {
+	if vaultClient.Healthy() {
+		return http.StatusOK, nil
+	}
+	return http.StatusInternalServerError, fmt.Errorf("vault token refresh is failing")
+}
+
 func policiesList(policies string) []string {
 	return strings.Split(policies, ",")
 }

@@ -35,16 +35,19 @@ func startServer(config *Config) error {
 	var err error
 
 	if err = config.ValidateConfig(); err != nil {
+		logrus.Errorf("Failed to validate config")
 		return err
 	}
 
 	vaultClient, err = NewVaultClient(config.VaultURL, config.VaultToken, config.VaultRole)
 	if err != nil {
+		logrus.Errorf("failed to initialize vault client: %s", err)
 		return err
 	}
 
 	rancherClient, err = rancher.NewRancherClient(config.RancherURL, config.RancherAccess, config.RancherSecret)
 	if err != nil {
+		logrus.Errorf("failed to initialize Rancher client: %s", err)
 		return err
 	}
 

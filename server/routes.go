@@ -63,5 +63,7 @@ func NewRouter() *mux.Router {
 	router.Methods("POST").Path("/v1-vault-driver/tokens").Handler(f(schemas, CreateTokenRequest))
 	router.Methods("DELETE").Path("/v1-vault-driver/tokens").Handler(f(schemas, RevokeTokenRequest))
 
+	router.Methods("GET").Path("/healthcheck").Handler(f(schemas, HealthCheck))
+
 	return router
 }
