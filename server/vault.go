@@ -128,22 +128,24 @@ func (vc *VaultClient) InspectIssuingTokenForConfig() error {
 
 	vc.instanceTokenConfig = tokenConfig
 
-	logrus.Debugf("token: %#v", selfIntrospectedToken.Data)
-	if instanceTTL, ok := selfIntrospectedToken.Data["meta"].(map[string]interface{})["ttl"].(string); ok {
-		vc.instanceTokenConfig.TTL = instanceTTL
-	}
-
-	if intermediate, ok := selfIntrospectedToken.Data["meta"].(map[string]interface{})["intermediateTTL"].(string); ok {
-		vc.instanceTokenConfig.IntermediateTTL = intermediate
-	}
-
-	if renewable, ok := selfIntrospectedToken.Data["meta"].(map[string]interface{})["renewable"].(string); ok {
-		if renewable == "false" {
-			vc.instanceTokenConfig.Renewable = false
+	switch selfIntrospectedToken.Data["meta"].(type) {
+	case map[string]interface{}:
+		if instanceTTL, ok := selfIntrospectedToken.Data["meta"].(map[string]interface{})["ttl"].(string); ok {
+			vc.instanceTokenConfig.TTL = instanceTTL
 		}
-	}
 
-	logrus.Debugf("TOKEN CONFIG: %#v", vc.instanceTokenConfig)
+		if intermediate, ok := selfIntrospectedToken.Data["meta"].(map[string]interface{})["intermediateTTL"].(string); ok {
+			vc.instanceTokenConfig.IntermediateTTL = intermediate
+		}
+
+		if renewable, ok := selfIntrospectedToken.Data["meta"].(map[string]interface{})["renewable"].(string); ok {
+			if renewable == "false" {
+				vc.instanceTokenConfig.Renewable = false
+			}
+		}
+	default:
+		logrus.Debugf("no metadata configuration passed on token")
+	}
 
 	return nil
 }
