@@ -128,6 +128,7 @@ func (vc *VaultClient) InspectIssuingTokenForConfig() error {
 
 	vc.instanceTokenConfig = tokenConfig
 
+	// Sometimes it is an interface{} and sometimes it is map[string]interface{}
 	switch selfIntrospectedToken.Data["meta"].(type) {
 	case map[string]interface{}:
 		if instanceTTL, ok := selfIntrospectedToken.Data["meta"].(map[string]interface{})["ttl"].(string); ok {
@@ -156,6 +157,8 @@ func (vc *VaultClient) StartTokenRefresh() error {
 		vc.healthy = false
 		logrus.Errorf("could not renew token: %s", err)
 	}
+
+	vc.healthy = true
 
 	// This should be a long TTL so that there is opportunity to refresh, and recover if Vault
 	// Goes down.
