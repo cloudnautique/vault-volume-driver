@@ -30,8 +30,11 @@ func CreateTokenRequest(rw http.ResponseWriter, req *http.Request) (int, error) 
 		return http.StatusInternalServerError, err
 	}
 
-	logrus.Debugf("Response: %#v", resp)
-	apiContext.Write(NewVaultTokenResponse(resp))
+	vtr, err := NewVaultTokenResponse(resp, vti.PublicKey)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	apiContext.Write(vtr)
 
 	return http.StatusOK, nil
 }
@@ -64,28 +67,31 @@ func policiesList(policies string) []string {
 	return strings.Split(policies, ",")
 }
 
-func newVerifiedVaultTokenInput(req *http.Request) (*VaultTokenInput, error) {
+func newVerifiedVaultTokenInput(req *http.Request) (*verifiedVaultTokenInput, error) {
 	msg := &VaultTokenInput{}
+	resp := &verifiedVaultTokenInput{}
 
 	jsonDecoder := json.NewDecoder(req.Body)
 
 	err := jsonDecoder.Decode(msg)
 	if err != nil {
 		logrus.Debugf("Error: %s", err.Error())
-		return msg, err
+		return resp, err
 	}
 
 	verified, err := verifySignature(msg.HostUUID, req.Header.Get(SignatureHeaderString), msg)
 	if err != nil {
-		return msg, err
+		return resp, err
 	}
 
 	if verified {
-		logrus.Debugf("VERIFIED: %s", verified)
-		return msg, nil
+		logrus.Debugf("verified: %s", verified)
+		resp.Policies = msg.Policies
+		resp.PublicKey, err = rancher.GetRancherHostPublicKey(rancherClient, msg.HostUUID)
+		return resp, err
 	}
 
-	return msg, fmt.Errorf("signatures did not match")
+	return resp, fmt.Errorf("signatures did not match")
 }
 
 func newVerifiedRevokeTokenRequest(req *http.Request) (*VaultTokenExpireInput, error) {

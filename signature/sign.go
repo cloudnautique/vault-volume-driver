@@ -7,10 +7,10 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/rancher/secrets-api/pkg/rsautils"
 )
 
 const (
@@ -56,20 +56,8 @@ func LoadPrivateKeyFromString(key string) (*rsa.PrivateKey, error) {
 }
 
 func LoadRSAPublicKey(key string) (*rsa.PublicKey, error) {
-	block, val := pem.Decode([]byte(key))
-	if block == nil {
-		logrus.Debugf(string(val))
-		return nil, errors.New("could not decode public key block")
-	}
-
-	logrus.Debugf("Public Key Block Type: %s", block.Type)
-
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return pub.(*rsa.PublicKey), nil
+	rsakey, err := rsautils.PublicKeyFromString(key)
+	return rsakey.PublicKey, err
 }
 
 func timeWindowExpired(ts *time.Time) bool {
