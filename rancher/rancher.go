@@ -26,6 +26,7 @@ func NewRancherClientFromContainerEnv() (*client.RancherClient, error) {
 }
 
 func GetRancherHostPublicKey(rClient *client.RancherClient, hostUUID string) (string, error) {
+	// TODO: add a cache here possibly use hashicorp/lru
 	hosts, err := rClient.Host.List(&client.ListOpts{
 		Filters: map[string]interface{}{
 			"uuid": hostUUID,

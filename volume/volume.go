@@ -15,6 +15,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/moby/moby/pkg/mount"
 	"github.com/rancher/go-rancher-metadata/metadata"
+	"github.com/rancher/secrets-api/pkg/rsautils"
 	"github.com/rancher/vault-volume-driver/server"
 	"github.com/rancher/vault-volume-driver/signature"
 )
@@ -103,7 +104,7 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 		return dev, err
 	}
 
-	err = writeToken(token.Token, options)
+	err = writeToken(token.EncryptedToken, options)
 	if err != nil {
 		logrus.Errorf("failed to write token: %s to disk. calling revoke.", err)
 		makeTokenRevokeRequest(token.Accessor)
@@ -287,7 +288,17 @@ func writeToken(token string, options map[string]interface{}) error {
 	}
 	fullPath := path.Join(values.Get("device"), "token")
 
-	return ioutil.WriteFile(fullPath, []byte(token)[:len(token)], os.FileMode(0644))
+	decryptor, err := rsautils.NewRSADecryptorKeyFromFile(privateKeyFile)
+	if err != nil {
+		return err
+	}
+
+	tokenBytes, err := decryptor.Decrypt(token)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(fullPath, tokenBytes, os.FileMode(0644))
 }
 
 func newDeviceString(device string) string {

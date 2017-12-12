@@ -19,10 +19,17 @@ type VaultTokenInput struct {
 	TimeStamp string `json:"timestamp"`
 }
 
+type verifiedVaultTokenInput struct {
+	Policies  string
+	PublicKey string
+}
+
 type VaultIntermediateTokenResponse struct {
 	client.Resource
-	Token    string `json:"token"`
-	Accessor string `json:"accessor"`
+	// EncryptedToken is the Vault Token RSA Encrypted with the hosts public key.
+	// This prevents replay attacks from another host.
+	EncryptedToken string `json:"encryptedToken"`
+	Accessor       string `json:"accessor"`
 }
 
 type VaultTokenExpireInput struct {
