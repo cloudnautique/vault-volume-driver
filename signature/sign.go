@@ -62,7 +62,7 @@ func LoadRSAPublicKey(key string) (*rsa.PublicKey, error) {
 
 func timeWindowExpired(ts *time.Time) bool {
 	duration := time.Since(*ts)
-	logrus.Debugf("duration: %s", duration)
+	logrus.Debugf("signature timestamp lapsed time: %s", duration)
 	if duration > TimeWindow {
 		return true
 	}
