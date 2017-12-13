@@ -72,7 +72,7 @@ func (vc *VaultClient) NewWrappedVaultToken(policies []string) (*IntermediateTok
 		return token, err
 	}
 
-	token.Accessor = sec.WrapInfo.Accessor
+	token.Accessor = sec.WrapInfo.WrappedAccessor
 	token.Token = sec.WrapInfo.Token
 
 	return token, nil

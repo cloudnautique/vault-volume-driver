@@ -106,7 +106,7 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 
 	err = writeToken(token.EncryptedToken, options)
 	if err != nil {
-		logrus.Errorf("failed to write token: %s to disk. calling revoke.", err)
+		logrus.Errorf("failed to write token: %s to volume. calling revoke.", err)
 		makeTokenRevokeRequest(token.Accessor)
 		return dev, err
 	}

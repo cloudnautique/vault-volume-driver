@@ -34,6 +34,8 @@ func CreateTokenRequest(rw http.ResponseWriter, req *http.Request) (int, error) 
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
+
+	logrus.Debugf("sending intermediate token with accessor: %s", vtr.Accessor)
 	apiContext.Write(vtr)
 
 	return http.StatusOK, nil
@@ -110,7 +112,7 @@ func newVerifiedRevokeTokenRequest(req *http.Request) (*VaultTokenExpireInput, e
 	}
 
 	if verified {
-		logrus.Debugf("VERIFIED: %s", verified)
+		logrus.Debugf("verified signature from host: %s", msg.HostUUID)
 		return msg, nil
 	}
 
