@@ -1,4 +1,4 @@
 FROM ubuntu:16.04
-COPY vault-volume-driver /usr/bin/
-COPY vault-volume-driver-server /usr/bin/
-CMD ["vault-volume-driver"]
+COPY secrets-bridge-v2 /usr/bin/
+COPY secrets-bridge-v2-server /usr/bin/
+CMD ["secrets-bridge-v2"]

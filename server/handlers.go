@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/api"
-	"github.com/rancher/vault-volume-driver/rancher"
-	"github.com/rancher/vault-volume-driver/signature"
+	"github.com/rancher/secrets-bridge-v2/rancher"
+	"github.com/rancher/secrets-bridge-v2/signature"
 )
 
 const (

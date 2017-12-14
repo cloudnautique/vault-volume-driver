@@ -16,10 +16,10 @@ if echo $TAG | grep -q dirty; then
     TAG=dev
 fi
 
-cp ../bin/vault-volume-driver .
-cp ../bin/vault-volume-driver-server .
+cp ../bin/secrets-bridge-v2 .
+cp ../bin/secrets-bridge-v2-server .
 
-IMAGE=${REPO}/vault-volume-driver:${TAG}
+IMAGE=${REPO}/secrets-bridge-v2:${TAG}
 docker build -t ${IMAGE} .
 echo ${IMAGE} > ../dist/images
 echo Built ${IMAGE}
