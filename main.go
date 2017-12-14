@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/rancher/vault-volume-driver/server"
+	"github.com/rancher/secrets-bridge-v2/server"
 	"github.com/urfave/cli"
 )
 
@@ -19,7 +19,7 @@ func beforeApp(c *cli.Context) error {
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "vault-volume-driver"
+	app.Name = "secrets-bridge-v2"
 	app.Version = VERSION
 	app.Usage = "Rancher Vault Volume Driver"
 	app.Before = beforeApp

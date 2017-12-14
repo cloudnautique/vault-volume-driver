@@ -1,4 +1,4 @@
-vault-volume-driver
+Secrets Bridge v2
 ========
 
 A microservice that does micro things.
@@ -10,7 +10,7 @@ A microservice that does micro things.
 
 ## Running
 
-`./bin/vault-volume-driver`
+`./bin/secrets-bridge-v2`
 
 ## License
 Copyright (c) 2014-2017 [Rancher Labs, Inc.](http://rancher.com)

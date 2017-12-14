@@ -52,7 +52,7 @@ start_rancher_agent()
 wire_vault "http://127.0.0.1:8200"
 rancher_url=$(get_rancher_url)
 
-./bin/vault-volume-driver -d server --vault-url http://127.0.0.1:8200 --vault-role demo --vault-token ${VAULT_ROOT_TOKEN_ID} --rancher-url ${rancher_url}&
+./bin/secrets-bridge-v2 -d server --vault-url http://127.0.0.1:8200 --vault-role demo --vault-token ${VAULT_ROOT_TOKEN_ID} --rancher-url ${rancher_url}&
 
 start_rancher_agent $rancher_url
 

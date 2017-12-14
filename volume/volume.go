@@ -16,12 +16,12 @@ import (
 	"github.com/moby/moby/pkg/mount"
 	"github.com/rancher/go-rancher-metadata/metadata"
 	"github.com/rancher/secrets-api/pkg/rsautils"
-	"github.com/rancher/vault-volume-driver/server"
-	"github.com/rancher/vault-volume-driver/signature"
+	"github.com/rancher/secrets-bridge-v2/server"
+	"github.com/rancher/secrets-bridge-v2/signature"
 )
 
 const (
-	volRoot        = "/var/lib/rancher/volumes/vault-volume-driver"
+	volRoot        = "/var/lib/rancher/volumes/secrets-bridge-v2"
 	metadataURL    = "http://169.254.169.250/2016-07-29"
 	privateKeyFile = "/var/lib/rancher/etc/ssl/host.key"
 )

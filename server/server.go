@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/v2"
-	"github.com/rancher/vault-volume-driver/rancher"
+	"github.com/rancher/secrets-bridge-v2/rancher"
 )
 
 var listenAddress = ":8080"
