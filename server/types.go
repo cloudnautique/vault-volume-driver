@@ -14,9 +14,10 @@ type errObj struct {
 
 type VaultTokenInput struct {
 	client.Resource
-	Policies  string `json:"policies"`
-	HostUUID  string `json:"hostUUID"`
-	TimeStamp string `json:"timestamp"`
+	Policies   string `json:"policies"`
+	HostUUID   string `json:"hostUUID"`
+	TimeStamp  string `json:"timestamp"`
+	VolumeName string `json:"volumeName"`
 }
 
 type verifiedVaultTokenInput struct {

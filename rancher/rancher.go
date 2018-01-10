@@ -42,3 +42,27 @@ func GetRancherHostPublicKey(rClient *client.RancherClient, hostUUID string) (st
 
 	return "", fmt.Errorf("host: %s not found", hostUUID)
 }
+
+func GetVolumeTemplate(rclient *client.RancherClient, volumeName string) (*client.VolumeTemplate, error) {
+	volumeTemplate := &client.VolumeTemplate{}
+
+	volumes, err := rclient.Volume.List(&client.ListOpts{
+		Filters: map[string]interface{}{
+			"name": volumeName,
+		},
+	})
+	if err != nil {
+		return volumeTemplate, err
+	}
+
+	if len(volumes.Data) > 0 {
+		if volumes.Data[0].VolumeTemplateId == "" {
+			return volumeTemplate, fmt.Errorf("no volume template, per_container: true likely not set")
+		}
+
+		err = rclient.GetLink(volumes.Data[0].Resource, "volumeTemplate", volumeTemplate)
+		return volumeTemplate, err
+	}
+
+	return volumeTemplate, fmt.Errorf("no volumes found")
+}

@@ -69,6 +69,11 @@ func (v *FlexVol) Delete(options map[string]interface{}) error {
 }
 
 func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
+	name, ok := options["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("name not set for volume")
+	}
+
 	dev, ok := options["device"].(string)
 	if !ok {
 		return dev, fmt.Errorf("could not find device key in options")
@@ -77,6 +82,12 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 	devValues, err := getDevValues(dev)
 	if err != nil {
 		return dev, err
+	}
+
+	// Revoke if there was a previous accessor on the volume
+	accessor := devValues.Get("accessor")
+	if accessor != "" {
+		makeTokenRevokeRequest(accessor)
 	}
 
 	host, err := getHostMetadata()
@@ -90,8 +101,9 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 	}
 
 	req := &server.VaultTokenInput{
-		Policies: policies,
-		HostUUID: host.UUID,
+		Policies:   policies,
+		HostUUID:   host.UUID,
+		VolumeName: name,
 	}
 
 	token, err := makeTokenRequest(req)
