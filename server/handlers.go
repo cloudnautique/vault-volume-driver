@@ -81,6 +81,10 @@ func newVerifiedVaultTokenInput(req *http.Request) (*verifiedVaultTokenInput, er
 		return resp, err
 	}
 
+	if !perContainerDef(msg.VolumeName) {
+		return resp, fmt.Errorf("per_container is set to false or not defined on this volume")
+	}
+
 	verified, err := verifySignature(msg.HostUUID, req.Header.Get(SignatureHeaderString), msg)
 	if err != nil {
 		return resp, err
@@ -138,4 +142,14 @@ func verifySignature(hostUUID, reqSignature string, msg signature.Message) (bool
 	}
 
 	return signature.Verify(sigBytes, msg, pubKey)
+}
+
+func perContainerDef(volumeName string) bool {
+	template, err := rancher.GetVolumeTemplate(rancherClient, volumeName)
+	if err != nil {
+		logrus.Error(err)
+		return false
+	}
+
+	return template.PerContainer
 }
