@@ -51,7 +51,7 @@ func (v *FlexVol) Create(options map[string]interface{}) (map[string]interface{}
 
 	if name, ok := options["name"].(string); ok {
 		volPath := path.Join(volRoot, name)
-		logrus.Infof("volume path is: %s", volPath)
+		logrus.Debugf("volume path is: %s", volPath)
 
 		resp["device"] = newDeviceString(volPath)
 		return resp, nil
@@ -79,7 +79,7 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 		return dev, fmt.Errorf("could not find device key in options")
 	}
 
-	devValues, err := getDevValues(dev)
+	devValues, err := getDeviceValues(dev)
 	if err != nil {
 		return dev, err
 	}
@@ -125,13 +125,14 @@ func (v *FlexVol) Attach(options map[string]interface{}) (string, error) {
 
 	devValues.Set("accessor", token.Accessor)
 
-	return devValues.Encode(), nil
+	err = writeAccessor(token.Accessor, devValues.Get("device"))
+	return devValues.Encode(), err
 }
 
 func (v *FlexVol) Detach(device string) error {
 	logrus.Infof("Device: %s", device)
 
-	values, err := getDevValues(device)
+	values, err := getDeviceValues(device)
 	if err != nil {
 		return err
 	}
@@ -149,8 +150,8 @@ func (v *FlexVol) Detach(device string) error {
 }
 
 func (v *FlexVol) Mount(dir string, device string, params map[string]interface{}) error {
-	logrus.Infof("Device: %s, dir: %s, params: %#v", device, dir, params)
-	values, err := getDevValues(device)
+	logrus.Debugf("Device: %s, dir: %s, params: %#v", device, dir, params)
+	values, err := getDeviceValues(device)
 	if err != nil {
 		return err
 	}
@@ -158,7 +159,20 @@ func (v *FlexVol) Mount(dir string, device string, params map[string]interface{}
 }
 
 func (v *FlexVol) Unmount(dir string) error {
-	logrus.Infof("Dir: %s", dir)
+	logrus.Debugf("Dir: %s", dir)
+
+	accessorFile := path.Join(dir, ".accessor")
+	if _, err := os.Stat(accessorFile); err == nil {
+		accessorBytes, err := ioutil.ReadFile(accessorFile)
+		if err != nil {
+			return err
+		}
+
+		if err = makeTokenRevokeRequest(string(accessorBytes)); err != nil {
+			return err
+		}
+	}
+
 	if err := mount.Unmount(dir); err != nil {
 		return err
 	}
@@ -294,7 +308,7 @@ func writeToken(token string, options map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("could not find key: %s in options", "device")
 	}
-	values, err := getDevValues(devPath)
+	values, err := getDeviceValues(devPath)
 	if err != nil {
 		return err
 	}
@@ -313,13 +327,18 @@ func writeToken(token string, options map[string]interface{}) error {
 	return ioutil.WriteFile(fullPath, tokenBytes, os.FileMode(0644))
 }
 
+func writeAccessor(accessor, devPath string) error {
+	fullPath := path.Join(devPath, ".accessor")
+	return ioutil.WriteFile(fullPath, []byte(accessor), os.FileMode(0644))
+}
+
 func newDeviceString(device string) string {
 	val := &url.Values{}
 	val.Set("device", device)
 	return val.Encode()
 }
 
-func getDevValues(dev string) (url.Values, error) {
+func getDeviceValues(dev string) (url.Values, error) {
 	retValues, err := url.ParseQuery(dev)
 	cleanedString := strings.Replace(retValues.Get("device"), "%2F", "/", -1)
 	retValues.Set("device", cleanedString)

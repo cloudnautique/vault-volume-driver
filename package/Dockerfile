@@ -5,7 +5,7 @@ COPY entrypoint.sh /entrypoint.sh
 COPY secrets-bridge-v2 /usr/bin/
 COPY secrets-bridge-v2-server /usr/bin/
 
-ADD https://raw.githubusercontent.com/rancher/rancher/master/server/bin/update-rancher-ssl /usr/bin/update-rancher-ssl
+ADD https://raw.githubusercontent.com/rancher/rancher/v1.6/server/bin/update-rancher-ssl /usr/bin/update-rancher-ssl
 RUN chmod +x /usr/bin/update-rancher-ssl /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
