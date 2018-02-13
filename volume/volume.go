@@ -173,10 +173,7 @@ func (v *FlexVol) Unmount(dir string) error {
 		}
 	}
 
-	if err := mount.Unmount(dir); err != nil {
-		return err
-	}
-	return os.RemoveAll(dir)
+	return mount.Unmount(dir)
 }
 
 func createTmpfs(dir string, options map[string]interface{}) error {
