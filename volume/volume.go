@@ -265,9 +265,11 @@ func makeTokenRequest(tokenBody *server.VaultTokenInput) (*server.VaultIntermedi
 	if err != nil {
 		return tokenResp, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return tokenResp, fmt.Errorf("received status code %d", resp.StatusCode)
+		body, _ := ioutil.ReadAll(resp.Body)
+		return tokenResp, fmt.Errorf("received status code: %d msg: %s", resp.StatusCode, body)
 	}
 
 	jsonDecoder := json.NewDecoder(resp.Body)
